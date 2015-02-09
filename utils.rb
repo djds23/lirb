@@ -35,3 +35,15 @@ module Operator
         a == b
     end
 end
+
+module SimpleMath
+    def SimpleMath.abs(x)
+        x.abs
+    end
+end
+
+module FuncUtils
+    def FuncUtils.apply(func, *args, **kwargs)
+        func(*args, **kwargs)
+    end
+end
