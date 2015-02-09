@@ -1,6 +1,9 @@
 # This is my work on translating the lispy interpreter to Ruby
+# Working on how to do proper imports
+# require lirb/operators
+require_relative 'operators' 
 
-L_Symbol = String
+SchemeSymbol = String
 List = Array
 Number = [Integer, Float]
 
@@ -47,9 +50,13 @@ end
 Env = Hash
 
 def standard_env
-    math_methods = Math.methods
+    math_methods = Math.public_methods
     math_names = math_methods.map { |meth| meth.to_s }
+    # this pollutes default Env with class methods on math
+    # Fix this somehow
     env = Env[math_names.zip math_methods]    
+    #env.merge({
+       # 'x' =>  
 end
 
 token_str = "(begin (define r 10) (* pi (* r r)))" 
