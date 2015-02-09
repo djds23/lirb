@@ -44,6 +44,14 @@ def parse(program)
     read_from_tokens(tokenize(program))
 end
 
+Env = Hash
+
+def standard_env
+    math_methods = Math.methods
+    math_names = math_methods.map { |meth| meth.to_s }
+    env = Env[math_names.zip math_methods]    
+end
+
 token_str = "(begin (define r 10) (* pi (* r r)))" 
 test_tokenize = tokenize(token_str) === ['(', 'begin', '(', 'define', 'r', '10', ')', '(', '*', 'pi', '(', '*', 'r', 'r', ')', ')', ')'] 
 
