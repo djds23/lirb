@@ -1,7 +1,7 @@
 # This is my work on translating the lispy interpreter to Ruby
 # Working on how to do proper imports
-require_relative 'utils'
 
+Env = Hash
 SchemeSymbol = String
 List = Array
 Number = [Integer, Float]
@@ -48,29 +48,24 @@ class Interperter
     end
 end
 
-Env = Hash
 class Environment
     def standard_env
-        # Fix this somehow
         env = Env.new()  
-        op = Operator
         operators = {
-            '+' => lambda { |x, y| op.add(x, y) },
-            '-' => lambda { |x, y| op.sub(x, y) },
-            '*' => lambda { |x, y| op.mul(x, y) },
-            '/' => lambda { |x, y| op.div(x, y) },
-            '>' => lambda { |x, y| op.gt(x, y) },
-            '<' => lambda { |x, y| op.lt(x, y) },
-            '>=' => lambda { |x, y| op.gte(x, y) },
-            '<=' => lambda { |x, y| op.lte(x, y) },
-            '=' => lambda { |x, y|  op.eq(x, y) }
+            '+' => lambda { |x, y| x + y },
+            '-' => lambda { |x, y| x - y },
+            '*' => lambda { |x, y| x * y },
+            '/' => lambda { |x, y| x / y },
+            '>' => lambda { |x, y| x > y },
+            '<' => lambda { |x, y| x < y },
+            '>=' => lambda { |x, y| x >= y },
+            '<=' => lambda { |x, y| x <= y },
+            '=' => lambda { |x, y| x == y }
         }
-        sm = SimpleMath
-        fu = FuncUtils
         funcs = {
-            'abs' => lambda { |x| sm.abs(x) },
-            'append' => lambda { |x, y| op.add(x, y) },
-            'apply' => lambda { |*x| fu.apply(*x) },
+            'abs' => lambda { |x| x.abs },
+            'append' => lambda { |x, y| x + y },
+            'apply' => lambda { |x, *y| x(*y) },
             'begin' => lambda { |*x| x[-1] }, 
             'car' => lambda { |x| x[0] },
             'cdr' => lambda { |x| x[1, x.size] },
