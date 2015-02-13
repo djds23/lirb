@@ -51,34 +51,36 @@ end
 Env = Hash
 class Environment
     def standard_env
-        math_methods = Math.public_methods
-        math_names = math_methods.map { |meth| meth.to_s }
-        # this pollutes default Env with class methods on math
         # Fix this somehow
-        env = Env[math_names.zip math_methods]    
+        env = Env.new()  
         op = Operator
         operators = {
             '+' => lambda { |x, y| op.add(x, y) },
-=begin
-      
-            '-' => op.sub,
-            '*' => op.mul,
-            '/' => op.div,
-            '>' => op.gt,
-            '<' => op.lt,
-            '>=' => op.gte,
-            '<=' => op.lte,
-            '=' => op.eq,
+            '-' => lambda { |x, y| op.sub(x, y) },
+            '*' => lambda { |x, y| op.mul(x, y) },
+            '/' => lambda { |x, y| op.div(x, y) },
+            '>' => lambda { |x, y| op.gt(x, y) },
+            '<' => lambda { |x, y| op.lt(x, y) },
+            '>=' => lambda { |x, y| op.gte(x, y) },
+            '<=' => lambda { |x, y| op.lte(x, y) },
+            '=' => lambda { |x, y|  op.eq(x, y) }
         }
-        sm = SimpleMath.new()
-        fu = FuncUtils.new()
+        sm = SimpleMath
+        fu = FuncUtils
         funcs = {
-            'abs' => sm.abs,
-            'append' => op.add,
-            'apply' => fu.apply,
-=end
+            'abs' => lambda { |x| sm.abs(x) },
+            'append' => lambda { |x, y| op.add(x, y) },
+            'apply' => lambda { |*x| fu.apply(*x) },
+            'begin' => lambda { |*x| x[-1] }, 
+            'car' => lambda { |x| x[0] },
+            'cdr' => lambda { |x| x[1, x.size] },
+            'eq?' => lambda { |x, y| x === y },
+            'equal?' => lambda { |x, y| x == y }, 
+            'length' => lambda { |x| x.size },
+            'list' => lambda { |*x| List[*x] },           
         }
         env.merge!(operators)
+        env.merge!(funcs)
         return env
     end
 end
