@@ -43,7 +43,7 @@ module SimpleMath
 end
 
 module FuncUtils
-    def FuncUtils.apply(func, *args, **kwargs)
-        func(*args, **kwargs)
+    def FuncUtils.apply(func, *args)
+        func(*args)
     end
 end
