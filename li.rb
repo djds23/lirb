@@ -50,8 +50,7 @@ end
 
 class Environment
     def standard_env
-        env = Env.new()  
-        operators = {
+        env = {
             '+' => lambda { |x, y| x + y },
             '-' => lambda { |x, y| x - y },
             '*' => lambda { |x, y| x * y },
@@ -60,12 +59,10 @@ class Environment
             '<' => lambda { |x, y| x < y },
             '>=' => lambda { |x, y| x >= y },
             '<=' => lambda { |x, y| x <= y },
-            '=' => lambda { |x, y| x == y }
-        }
-        funcs = {
+            '=' => lambda { |x, y| x == y },
             'abs' => lambda { |x| x.abs },
             'append' => lambda { |x, y| x + y },
-            'apply' => lambda { |x, *y| x(*y) },
+            'apply' => lambda { |x, *y| x[*y] },
             'begin' => lambda { |*x| x[-1] }, 
             'car' => lambda { |x| x[0] },
             'cdr' => lambda { |x| x[1, x.size] },
@@ -73,9 +70,16 @@ class Environment
             'equal?' => lambda { |x, y| x == y }, 
             'length' => lambda { |x| x.size },
             'list' => lambda { |*x| List[*x] },           
+            'list?' => lambda { |x| x.is_a? List },
+            'map' => lambda { |x, y| y.map { |z| x[z] } },
+            'max' => lambda { |x| x.max },
+            'min' => lambda { |x| x.min },
+            'not' => lambda { |x| not x },
+            'null?' => lambda { |x| x == [] },
+            'procedure?' => lambda { |x| x.respond_to? 'call' },
+            'round' => lambda { |x| x.round },
+            'symbol?' => lambda { |x| x.is_a? SchemeSymbol },
         }
-        env.merge!(operators)
-        env.merge!(funcs)
         return env
     end
 end
