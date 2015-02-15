@@ -45,14 +45,35 @@ class TestInterpreter < Test::Unit::TestCase
         program = "(begin (define r 10) (* pi (* r r)))"
         scheme = Interpreter.new()
         ast = scheme.parse(program)
-        rv = scheme._eval(ast)
+        rv = _eval(ast)
         assert_equal(rv, 314.1592653589793)
     end
 
-    #def test_procedures_and_envs
-        #scheme = Interpreter.new()
+    def test_procedures_and_envs
+        program = "(begin 
+                    (define fact 
+                    (lambda (n) (if 
+                        (<= n 1) 1 (* n (fact (- n 1))))))    
+                    (fact 10))"
+        scheme = Interpreter.new()
+        ast = scheme.parse(program)
+        rv = _eval(ast)
+        assert_equal(rv, 3628800)
+    end
 
-
+    def test_procedures_and_envs_1
+        program = "(begin
+                    (define fib 
+                        (lambda (n) 
+                          (if (< n 2) 
+                              1 
+                              (+ (fib (- n 1)) (fib (- n 2))))))
+                              (fib 10))"
+        scheme = Interpreter.new()
+        ast = scheme.parse(program)
+        rv = _eval(ast)
+        assert_equal(rv, 89)
+    end
 end
 
 

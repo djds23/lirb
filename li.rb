@@ -59,19 +59,49 @@ end
 
 $global_env = Environment.new().standard_env
 
-class Interpreter
-    
-    class Procedure
-        def initialize(params, body, env)
-            @params = params
-            @body = body
-            @env = env
-        end
-        
-        def call(*args)
-            _eval(@body, Environment.new(@params, outer=@env,  *args))
-        end
+class Procedure
+    def initialize(params, body, env)
+        @params = params
+        @body = body
+        @env = env
     end
+    
+    def call(*args)
+        _eval(@body, Environment.new(@params, outer=@env,  *args))
+    end
+end
+
+def _eval(input, env=$global_env)
+    if input.is_a? SchemeSymbol 
+        return env.find(input)[input]
+    elsif not input.is_a? List
+        return input
+    elsif input[0] == 'quote'
+        _, exp = input
+        return exp
+    elsif input[0] == 'if'
+        _, test, conseq, alt = input
+        exp = _eval(test, env) ? conseq : alt
+        return _eval(exp, env)
+    elsif input[0] == 'define'
+        _, var, exp = input
+        env.merge!({var =>  _eval(exp, env)})
+    elsif input[0] == 'set!'
+        _, var, exp = input
+        env.find(var)[var] = _eval(exp, env)
+    elsif input[0] == 'lambda'
+        _, params, body = input
+        return Procedure.new(params, body, env)
+    else
+        procedure = _eval(input[0], env)
+        args = input[1, input.size].map { |x| _eval(x, env) }
+        puts args
+        return procedure.call(*args)
+    end
+end
+
+
+class Interpreter
 
     def tokenize str
         str.gsub('(', ' ( ').gsub(')', ' ) ').split(' ')
@@ -112,35 +142,6 @@ class Interpreter
         read_from_tokens(tokenize(program))
     end
 
-
-    def _eval(input, env=$global_env)
-        if input.is_a? SchemeSymbol 
-            return env.find(input)[input]
-        elsif not input.is_a? List
-            return input
-        elsif input[0] == 'quote'
-            _, exp = input
-            return exp
-        elsif input[0] == 'if'
-            _, test, conseq, alt = input
-            exp = _eval(test, env) ? conseq : alt
-            return _eval(exp, env)
-        elsif input[0] == 'define'
-            _, var, exp = input
-            env.merge!({var =>  _eval(exp, env)})
-        elsif input[0] == 'set!'
-            _, var, exp = input
-            env.find(var)[var] = _eval(exp, env)
-        elsif input[0] == 'lambda'
-            _, params, body = input
-            return Procedure(params, body, env)
-        else
-            procedure = _eval(input[0], env)
-            args = input[1, input.size].map { |x| _eval(x, env) }
-            return procedure.call(*args)
-        end
-    end
-
     def raw_input(prompt="")
         print prompt
         gets
@@ -157,11 +158,9 @@ class Interpreter
             else    
                 output = parse(input.strip)
                 result =  _eval(output, env)
-                puts "Evald to: #{result}" 
+                puts result
             end            
         end
     end
 end
-
-#Interpreter.new().repl
 
