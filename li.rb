@@ -1,63 +1,55 @@
 # This is my work on translating the lispy interpreter to Ruby
 # Working on how to do proper imports
 
-Env = Hash
 SchemeSymbol = String
 List = Array
 Number = [Integer, Float]
 
-class Environment < Hash
-    
-    @@default = Environment.new()
-
-    def initialize(params=[], outer=standard_env, *args)
-        @@default.merge!(Hash[params.zip(args)])
+class Env < Hash
+    def initialize(keys=[], vals=[], outer=nil)
         @outer = outer
+        keys.zip(vals).each { |p| store(*p) }
     end
-
-    def find(var)
-        @@default.has_key?(var) ? @@default : @outer
-    end
-
-    def standard_env
-        env = {
-            'pi' => Math::PI,
-            '+' => lambda { |x, y| x + y },
-            '-' => lambda { |x, y| x - y },
-            '*' => lambda { |x, y| x * y },
-            '/' => lambda { |x, y| x / y },
-            '>' => lambda { |x, y| x > y },
-            '<' => lambda { |x, y| x < y },
-            '>=' => lambda { |x, y| x >= y },
-            '<=' => lambda { |x, y| x <= y },
-            '=' => lambda { |x, y| x == y },
-            'abs' => lambda { |x| x.abs },
-            'append' => lambda { |x, y| x + y },
-            'apply' => lambda { |x, *y| x.call(*y) },
-            'begin' => lambda { |*x| x[-1] }, 
-            'car' => lambda { |x| x[0] },
-            'cdr' => lambda { |x| x[1, x.size] },
-            'eq?' => lambda { |x, y| x === y },
-            'equal?' => lambda { |x, y| x == y }, 
-            'length' => lambda { |x| x.size },
-            'list' => lambda { |*x| List[*x] },           
-            'list?' => lambda { |x| x.is_a? List },
-            'map' => lambda { |x, y| y.map { |z| x.call(z) } },
-            'max' => lambda { |x| x.max },
-            'min' => lambda { |x| x.min },
-            'not' => lambda { |x| not x },
-            'null?' => lambda { |x| x == [] },
-            'procedure?' => lambda { |x| x.respond_to? 'call' },
-            'round' => lambda { |x| x.round },
-            'symbol?' => lambda { |x| x.is_a? SchemeSymbol },
-            'print' => lambda { |x| puts x },
-        }
-        @@default.merge!(env)
-        return @@default
-    end
+    def [](name) super(name) || @outer[name] end
+    def set(name, value) key?(name) ? store(name, value) : @outer.set(name, value) end
 end
 
-$global_env = Environment.new().standard_env
+def add_globals(env)
+    env.merge!({
+        'pi' => Math::PI,
+        '+' => lambda { |x, y| x + y },
+        '-' => lambda { |x, y| x - y },
+        '*' => lambda { |x, y| x * y },
+        '/' => lambda { |x, y| x / y },
+        '>' => lambda { |x, y| x > y },
+        '<' => lambda { |x, y| x < y },
+        '>=' => lambda { |x, y| x >= y },
+        '<=' => lambda { |x, y| x <= y },
+        '=' => lambda { |x, y| x == y },
+        'abs' => lambda { |x| x.abs },
+        'append' => lambda { |x, y| x + y },
+        'apply' => lambda { |x, *y| x.call(*y) },
+        'begin' => lambda { |*x| x[-1] }, 
+        'car' => lambda { |x| x[0] },
+        'cdr' => lambda { |x| x[1, x.size] },
+        'eq?' => lambda { |x, y| x === y },
+        'equal?' => lambda { |x, y| x == y }, 
+        'length' => lambda { |x| x.size },
+        'list' => lambda { |*x| List[*x] },           
+        'list?' => lambda { |x| x.is_a? List },
+        'map' => lambda { |x, y| y.map { |z| x.call(z) } },
+        'max' => lambda { |x| x.max },
+        'min' => lambda { |x| x.min },
+        'not' => lambda { |x| not x },
+        'null?' => lambda { |x| x == [] },
+        'procedure?' => lambda { |x| x.respond_to? 'call' },
+        'round' => lambda { |x| x.round },
+        'symbol?' => lambda { |x| x.is_a? SchemeSymbol },
+        'print' => lambda { |x| puts x },
+    })
+end
+
+$global_env = add_globals(Env.new())
 
 class Procedure
     def initialize(params, body, env)
@@ -67,13 +59,13 @@ class Procedure
     end
     
     def call(*args)
-        _eval(@body, Environment.new(@params, outer=@env,  *args))
+        _eval(@body, Env.new(@params, outer=@env,  *args))
     end
 end
 
 def _eval(input, env=$global_env)
     if input.is_a? SchemeSymbol 
-        return env.find(input)[input]
+        return env[input]
     elsif not input.is_a? List
         return input
     elsif input[0] == 'quote'
@@ -88,14 +80,14 @@ def _eval(input, env=$global_env)
         env.merge!({var =>  _eval(exp, env)})
     elsif input[0] == 'set!'
         _, var, exp = input
-        env.find(var)[var] = _eval(exp, env)
+        env[var] = _eval(exp, env)
     elsif input[0] == 'lambda'
         _, params, body = input
         return Procedure.new(params, body, env)
     else
         procedure = _eval(input[0], env)
         args = input[1, input.size].map { |x| _eval(x, env) }
-        puts args
+        puts "this #{input[0]} with #{args}"
         return procedure.call(*args)
     end
 end
@@ -120,7 +112,7 @@ class Interpreter
     end 
 
     def read_from_tokens tokens
-            if tokens.empty?
+        if tokens.empty?
             raise SyntaxError, "Unexpected EOF"
         end
         token = tokens.shift
@@ -148,7 +140,7 @@ class Interpreter
     end
 
     def repl(prompt="lirb> ")
-        env = Environment.new().standard_env
+        env = $global_env 
         while true 
             input = raw_input(prompt)
             puts input
@@ -164,3 +156,4 @@ class Interpreter
     end
 end
 
+Interpreter.new().repl

@@ -4,17 +4,17 @@ require "test/unit"
 
 class TestEnvironment < Test::Unit::TestCase
     def test_addition_in_env
-        env = Environment.new().standard_env()
+        env = add_globals(Env.new())
         assert_equal(2, env['+'][1,1])
     end
 
     def test_make_list
-        env = Environment.new().standard_env()
+        env = add_globals(Env.new())
         assert_equal([1,2,3], env['list'][1,2,3])
     end
 
     def test_map
-        env = Environment.new().standard_env()
+        env = add_globals(Env.new())
         list = env['list'][1,2,3]
         add1 = lambda { |x| env['+'][1, x] }
         new_list = env['map'][add1, list]
@@ -22,7 +22,7 @@ class TestEnvironment < Test::Unit::TestCase
     end
 
     def test_callable
-        e = Environment.new().standard_env()
+        e = add_globals(Env.new())
         assert !(e['procedure?'][nil])
         assert e['procedure?'][lambda { |x| x+1}]
     end
@@ -47,6 +47,14 @@ class TestInterpreter < Test::Unit::TestCase
         ast = scheme.parse(program)
         rv = _eval(ast)
         assert_equal(rv, 314.1592653589793)
+    end
+
+    def test_nested_evals
+        program = "(begin (+ 100 (+ 100 (+ 100))))"
+        scheme = Interpreter.new()
+        ast = scheme.parse(program)
+        rv = _eval(ast)
+        assert_equal(rv, 300)
     end
 
     def test_procedures_and_envs
