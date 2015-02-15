@@ -6,7 +6,19 @@ SchemeSymbol = String
 List = Array
 Number = [Integer, Float]
 
-class Environment
+class Environment < Hash
+    
+    @@default = Environment.new()
+
+    def initialize(params=[], outer=standard_env, *args)
+        @@default.merge!(Hash[params.zip(args)])
+        @outer = outer
+    end
+
+    def find(var)
+        @@default.has_key?(var) ? @@default : @outer
+    end
+
     def standard_env
         env = {
             'pi' => Math::PI,
@@ -21,7 +33,7 @@ class Environment
             '=' => lambda { |x, y| x == y },
             'abs' => lambda { |x| x.abs },
             'append' => lambda { |x, y| x + y },
-            'apply' => lambda { |x, *y| x[*y] },
+            'apply' => lambda { |x, *y| x.call(*y) },
             'begin' => lambda { |*x| x[-1] }, 
             'car' => lambda { |x| x[0] },
             'cdr' => lambda { |x| x[1, x.size] },
@@ -30,7 +42,7 @@ class Environment
             'length' => lambda { |x| x.size },
             'list' => lambda { |*x| List[*x] },           
             'list?' => lambda { |x| x.is_a? List },
-            'map' => lambda { |x, y| y.map { |z| x[z] } },
+            'map' => lambda { |x, y| y.map { |z| x.call(z) } },
             'max' => lambda { |x| x.max },
             'min' => lambda { |x| x.min },
             'not' => lambda { |x| not x },
@@ -38,12 +50,28 @@ class Environment
             'procedure?' => lambda { |x| x.respond_to? 'call' },
             'round' => lambda { |x| x.round },
             'symbol?' => lambda { |x| x.is_a? SchemeSymbol },
+            'print' => lambda { |x| puts x },
         }
-        return env
+        @@default.merge!(env)
+        return @@default
     end
 end
 
+$global_env = Environment.new().standard_env
+
 class Interpreter
+    
+    class Procedure
+        def initialize(params, body, env)
+            @params = params
+            @body = body
+            @env = env
+        end
+        
+        def call(*args)
+            _eval(@body, Environment.new(@params, outer=@env,  *args))
+        end
+    end
 
     def tokenize str
         str.gsub('(', ' ( ').gsub(')', ' ) ').split(' ')
@@ -84,9 +112,10 @@ class Interpreter
         read_from_tokens(tokenize(program))
     end
 
-    def _eval(input, env=Environment.new().standard_env)
+
+    def _eval(input, env=$global_env)
         if input.is_a? SchemeSymbol 
-            return env[input]
+            return env.find(input)[input]
         elsif not input.is_a? List
             return input
         elsif input[0] == 'quote'
@@ -98,11 +127,17 @@ class Interpreter
             return _eval(exp, env)
         elsif input[0] == 'define'
             _, var, exp = input
-            env[var] = _eval(exp, env)
+            env.merge!({var =>  _eval(exp, env)})
+        elsif input[0] == 'set!'
+            _, var, exp = input
+            env.find(var)[var] = _eval(exp, env)
+        elsif input[0] == 'lambda'
+            _, params, body = input
+            return Procedure(params, body, env)
         else
             procedure = _eval(input[0], env)
             args = input[1, input.size].map { |x| _eval(x, env) }
-            return procedure[*args]
+            return procedure.call(*args)
         end
     end
 
@@ -112,18 +147,21 @@ class Interpreter
     end
 
     def repl(prompt="lirb> ")
+        env = Environment.new().standard_env
         while true 
             input = raw_input(prompt)
-            if input.strip == "exit!" 
+            puts input
+            if input.strip == "exit" 
                 break  
+            elsif input.strip == ""
             else    
-                output = _eval(parse(input.strip))
-            end
-            if output
-                puts output
+                output = parse(input.strip)
+                result =  _eval(output, env)
+                puts "Evald to: #{result}" 
             end            
         end
     end
 end
 
+#Interpreter.new().repl
 

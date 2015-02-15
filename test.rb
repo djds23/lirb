@@ -48,6 +48,11 @@ class TestInterpreter < Test::Unit::TestCase
         rv = scheme._eval(ast)
         assert_equal(rv, 314.1592653589793)
     end
+
+    #def test_procedures_and_envs
+        #scheme = Interpreter.new()
+
+
 end
 
 
