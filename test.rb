@@ -50,11 +50,11 @@ class TestInterpreter < Test::Unit::TestCase
     end
 
     def test_nested_evals
-        program = "(begin (+ 100 (+ 100 (+ 100))))"
+        program = "(begin (+ 100 (+ 100 (+ 100 100))))"
         scheme = Interpreter.new()
         ast = scheme.parse(program)
         rv = _eval(ast)
-        assert_equal(rv, 300)
+        assert_equal(rv, 400)
     end
 
     def test_procedures_and_envs

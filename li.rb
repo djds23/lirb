@@ -8,43 +8,38 @@ Number = [Integer, Float]
 class Env < Hash
     def initialize(keys=[], vals=[], outer=nil)
         @outer = outer
-        keys.zip(vals).each { |p| store(*p) }
+        if not vals.is_a? List
+            vals = [vals]
+        end
+        holder = keys.zip(vals)
+        holder.each { |p| store(*p) }
     end
-    def [](name) super(name) || @outer[name] end
-    def set(name, value) key?(name) ? store(name, value) : @outer.set(name, value) end
+    def search(var) 
+         if self.has_key? var 
+             self 
+         else
+             @outer 
+         end 
+    end
 end
 
 def add_globals(env)
     env.merge!({
         'pi' => Math::PI,
-        '+' => lambda { |x, y| x + y },
-        '-' => lambda { |x, y| x - y },
-        '*' => lambda { |x, y| x * y },
-        '/' => lambda { |x, y| x / y },
-        '>' => lambda { |x, y| x > y },
-        '<' => lambda { |x, y| x < y },
-        '>=' => lambda { |x, y| x >= y },
-        '<=' => lambda { |x, y| x <= y },
-        '=' => lambda { |x, y| x == y },
-        'abs' => lambda { |x| x.abs },
-        'append' => lambda { |x, y| x + y },
-        'apply' => lambda { |x, *y| x.call(*y) },
-        'begin' => lambda { |*x| x[-1] }, 
-        'car' => lambda { |x| x[0] },
-        'cdr' => lambda { |x| x[1, x.size] },
-        'eq?' => lambda { |x, y| x === y },
-        'equal?' => lambda { |x, y| x == y }, 
-        'length' => lambda { |x| x.size },
-        'list' => lambda { |*x| List[*x] },           
-        'list?' => lambda { |x| x.is_a? List },
-        'map' => lambda { |x, y| y.map { |z| x.call(z) } },
-        'max' => lambda { |x| x.max },
-        'min' => lambda { |x| x.min },
-        'not' => lambda { |x| not x },
-        'null?' => lambda { |x| x == [] },
-        'procedure?' => lambda { |x| x.respond_to? 'call' },
-        'round' => lambda { |x| x.round },
-        'symbol?' => lambda { |x| x.is_a? SchemeSymbol },
+        '+' => lambda { |x, y| x + y }, '-' => lambda { |x, y| x - y },
+        '*' => lambda { |x, y| x * y }, '/' => lambda { |x, y| x / y },
+        '>' => lambda { |x, y| x > y }, '<' => lambda { |x, y| x < y }, 
+        '>=' => lambda { |x, y| x >= y }, '<=' => lambda { |x, y| x <= y },
+        '=' => lambda { |x, y| x == y }, 'abs' => lambda { |x| x.abs },
+        'append' => lambda { |x, y| x + y }, 'apply' => lambda { |x, *y| x.call(*y) },
+        'begin' => lambda { |*x| x[-1] }, 'car' => lambda { |x| x[0] },
+        'cdr' => lambda { |x| x[1, x.size] }, 'eq?' => lambda { |x, y| x === y },
+        'equal?' => lambda { |x, y| x == y }, 'length' => lambda { |x| x.size },
+        'list' => lambda { |*x| List[*x] },           'list?' => lambda { |x| x.is_a? List },
+        'map' => lambda { |x, y| y.map { |z| x.call(z) } }, 'max' => lambda { |x| x.max },
+        'min' => lambda { |x| x.min }, 'not' => lambda { |x| not x },
+        'null?' => lambda { |x| x == [] }, 'procedure?' => lambda { |x| x.respond_to? 'call' },
+        'round' => lambda { |x| x.round }, 'symbol?' => lambda { |x| x.is_a? SchemeSymbol },
         'print' => lambda { |x| puts x },
     })
 end
@@ -57,15 +52,15 @@ class Procedure
         @body = body
         @env = env
     end
-    
     def call(*args)
-        _eval(@body, Env.new(@params, outer=@env,  *args))
+        _eval(@body, Env.new(keys=@params,  *args, outer=@env))
     end
 end
 
 def _eval(input, env=$global_env)
     if input.is_a? SchemeSymbol 
-        return env[input]
+        lookup = env.search(input)
+        return lookup[input]
     elsif not input.is_a? List
         return input
     elsif input[0] == 'quote'
@@ -80,14 +75,13 @@ def _eval(input, env=$global_env)
         env.merge!({var =>  _eval(exp, env)})
     elsif input[0] == 'set!'
         _, var, exp = input
-        env[var] = _eval(exp, env)
+        env.search(var)[var] = _eval(exp, env)
     elsif input[0] == 'lambda'
         _, params, body = input
         return Procedure.new(params, body, env)
     else
         procedure = _eval(input[0], env)
         args = input[1, input.size].map { |x| _eval(x, env) }
-        puts "this #{input[0]} with #{args}"
         return procedure.call(*args)
     end
 end
@@ -145,7 +139,7 @@ class Interpreter
             input = raw_input(prompt)
             puts input
             if input.strip == "exit" 
-                break  
+                break
             elsif input.strip == ""
             else    
                 output = parse(input.strip)
@@ -156,4 +150,5 @@ class Interpreter
     end
 end
 
-Interpreter.new().repl
+
+
