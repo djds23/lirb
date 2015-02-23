@@ -1,9 +1,14 @@
 # This is my work on translating the lispy interpreter to Ruby
 # Working on how to do proper imports
 
-SchemeSymbol = String
+SchemeSymbol = Symbol
+SchemeString = String
 List = Array
 Number = [Integer, Float]
+
+def Sym(s, symbol_table={})
+    symbol_table.has_key? s 
+end
 
 class Env < Hash
     def initialize(keys=[], vals=[], outer=nil)
