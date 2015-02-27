@@ -1,14 +1,15 @@
 # This is my work on translating the lispy interpreter to Ruby
 # Working on how to do proper imports
 
-SchemeSymbol = Symbol
+SchemeSymbol = String
 SchemeString = String
 List = Array
 Number = [Integer, Float]
 
 def Sym(s, symbol_table={})
-    symbol_table.has_key? s 
+    symbol_table.has_key? s ? symbol_table[s] : symbol_table[s] = s.to_sym  
 end
+
 
 class Env < Hash
     def initialize(keys=[], vals=[], outer=nil)
@@ -40,7 +41,7 @@ def add_globals(env)
         'begin' => lambda { |*x| x[-1] }, 'car' => lambda { |x| x[0] },
         'cdr' => lambda { |x| x[1, x.size] }, 'eq?' => lambda { |x, y| x === y },
         'equal?' => lambda { |x, y| x == y }, 'length' => lambda { |x| x.size },
-        'list' => lambda { |*x| List[*x] },           'list?' => lambda { |x| x.is_a? List },
+        'list' => lambda { |*x| List[*x] }, 'list?' => lambda { |x| x.is_a? List },
         'map' => lambda { |x, y| y.map { |z| x.call(z) } }, 'max' => lambda { |x| x.max },
         'min' => lambda { |x| x.min }, 'not' => lambda { |x| not x },
         'null?' => lambda { |x| x == [] }, 'procedure?' => lambda { |x| x.respond_to? 'call' },
