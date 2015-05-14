@@ -1,5 +1,10 @@
-# This is my work on translating the lispy interpreter to Ruby
-# Working on how to do proper imports
+# An implementation of the lispy scheme interpreter in Ruby
+# Inspiration taken from: http://norvig.com/lispy.html
+# 
+# Written by Dean Silfen 
+#
+# dean.silfen@gmail.com 
+# @djds23 on Github 
 
 SchemeSymbol = String
 List = Array
